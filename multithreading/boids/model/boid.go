@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	constants "multithreading/boids/constants"
+	"sync"
 	"time"
 )
 
@@ -12,6 +13,7 @@ var (
 	Green    = color.RGBA{0x00, 0xff, 0x00, 0xff}
 	Boids    = make([]*Boid, constants.BoidCount)
 	BoidGrid = make([][]int, constants.Width+1)
+	RWLock   = sync.RWMutex{}
 )
 
 type Boid struct {
@@ -29,7 +31,8 @@ func (b *Boid) start() {
 
 func (b *Boid) moveOne() {
 	// update velocity with acc
-	acc := b.calcAccelaeration()
+	acc := b.calcAcceleration()
+	RWLock.Lock()
 	b.Velocity = b.Velocity.Add(acc).Limit(1, -1)
 	// update grid
 	BoidGrid[int(b.Position.X)][int(b.Position.Y)] = -1
@@ -42,30 +45,47 @@ func (b *Boid) moveOne() {
 	if next.Y >= constants.Height || next.Y < 0 {
 		b.Velocity = &Vector2D{Y: -b.Velocity.Y, X: b.Velocity.X}
 	}
-	// update grid
-	// time.Sleep(5000 * time.Millisecond)
-
+	RWLock.Unlock()
 }
 
-func (b *Boid) calcAccelaeration() *Vector2D {
+func (b *Boid) calcAcceleration() *Vector2D {
 	upper := Vector2D{X: b.Position.X + constants.ViewRadius, Y: b.Position.Y + constants.ViewRadius}
 	lower := Vector2D{X: b.Position.X - constants.ViewRadius, Y: b.Position.Y - constants.ViewRadius}
 	avgVel := &Vector2D{X: 0, Y: 0}
+	avgPos := &Vector2D{X: 0, Y: 0}
+	avgSeparation := &Vector2D{X: 0, Y: 0}
 	count := 0.0
+	acc := &Vector2D{X: b.borderBounce(b.Position.X, constants.Width), Y: b.borderBounce(b.Position.Y, constants.Height)}
+	RWLock.RLock()
 	for i := math.Max(0, lower.X); i < math.Min(constants.Width, upper.X); i++ {
 		for j := math.Max(0, lower.Y); j < math.Min(constants.Height, upper.Y); j++ {
 			if otherId := BoidGrid[int(i)][int(j)]; otherId != -1 && otherId != b.Id {
 				if dist := b.Position.Distance(Boids[otherId].Position); dist < constants.ViewRadius {
-					avgVel = avgVel.Add(Boids[otherId].Velocity)
 					count++
+					avgVel = avgVel.Add(Boids[otherId].Velocity)
+					avgPos = avgPos.Add(Boids[otherId].Position)
+					avgSeparation = avgSeparation.Add(b.Position.Sub(Boids[otherId].Position).DivideByScalar(dist))
 				}
 			}
 		}
 	}
+	RWLock.RUnlock()
 	if count > 0 {
 		avgVel = avgVel.DivideByScalar(count).Sub(b.Velocity).MultByScalar(constants.AdjRate)
+		avgPos = avgPos.DivideByScalar(count).Sub(b.Position).MultByScalar(constants.AdjRate)
+		avgSeparation = avgSeparation.MultByScalar(constants.AdjRate)
+		acc = acc.Add(avgVel).Add(avgPos).Add(avgSeparation)
 	}
-	return avgVel
+	return acc
+}
+
+func (b *Boid) borderBounce(pos, limit float64) float64 {
+	if pos < constants.ViewRadius {
+		return 1 / pos
+	} else if pos > limit-constants.ViewRadius {
+		return 1 / (pos - limit)
+	}
+	return 0
 }
 
 func CreateNew(id int) {
