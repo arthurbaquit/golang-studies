@@ -12,7 +12,7 @@ Consider using the Builder pattern when:
 
 ## When NOT to Use the Builder Pattern
 
-One should avoid this pattern particularly if the object being constructed is simple or has a fixed set of properties. In these cases, a simpler factory pattern may be more appropriate.
+One should avoid this pattern particularly if the object being constructed is simple or has a fixed set of properties. In these cases, a simpler [factory pattern](../factory/README.md) may be more appropriate.
 
 ## Pros
 
