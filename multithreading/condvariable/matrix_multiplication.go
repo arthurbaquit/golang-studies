@@ -31,10 +31,10 @@ func generateMatrix(matrix *[MATRIX_SIZE][MATRIX_SIZE]int) {
 func rowMatrixMultiply(row int, matrixA, matrixB, result *[MATRIX_SIZE][MATRIX_SIZE]int) {
 	rwLock.RLock()
 	for {
-		// Em vez de usar o defer wg.Done(), vamos usá-lo aqui após a primeira interação.
+		// Em vez de usar o defer wg.Done(), vamos usá-lo aqui antes da primeira interação.
 		// Isso porque, se usarmos o defer, corremos o risco do sinal ser enviado antes
-		// de todas as goroutines estarem prontas para receber o sinal (estar na condição de wait).
-		// Isso vai causar com que a gente perca esse sinal broadcast.
+		// de todas as goroutines estarem prontas para receber o sinal (as coroutines ainda não terem sido inicializadas).
+		// Ou seja, vamos esperar todas as coroutines terem seus respectivos locks vai causar com que a gente perca esse sinal broadcast.
 		wg.Done()
 		cond.Wait()
 		for j := 0; j < MATRIX_SIZE; j++ {
