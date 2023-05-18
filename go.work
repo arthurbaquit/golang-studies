@@ -1,8 +1,8 @@
 go 1.19
 
 use (
-	./backend-types/
-	./hexagonal-arch
+	./backendtypes/
+	./hexagonalarch
 	./keycloak/goclient
 	./multithreading/boids
 )
