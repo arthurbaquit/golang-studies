@@ -10,19 +10,19 @@ type ProductDB struct {
 	db *sql.DB
 }
 
-func (pdb *ProductDB) Get (id string) (app.ProductInterface, error){
-	var product app.ProductInterface
+func (pdb *ProductDB) Get(id string) (app.ProductInterface, error) {
+	var product app.Product
 	stmt, err := pdb.db.Prepare("SELECT id, name, price, status FROM products WHERE id = ?")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
-	
-	err = stmt.QueryRow(id).Scan(&product.ID, &product.Name, &product.Price, &product.Status)
-	return nil, nil
+
+	err = stmt.QueryRow(id).Scan(&product.Id, &product.Name, &product.Price, &product.Status)
+	return &product, err
 }
 
-func (pdb *ProductDB) Save (product app.ProductInterface) (app.ProductInterface, error){
+func (pdb *ProductDB) Save(product app.ProductInterface) (app.ProductInterface, error) {
 	return nil, nil
 }
 
