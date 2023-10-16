@@ -6,7 +6,7 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-const NUMBER_OF_UUIDS = 1
+const NUMBER_OF_UUIDS = 4
 
 func main() {
 	for i := 0; i < NUMBER_OF_UUIDS; i++ {
